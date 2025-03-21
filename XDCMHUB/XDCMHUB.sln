@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35825.156 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XDCMHUB", "XDCMHUB.csproj", "{5BD9EEDA-83AD-4A0E-AE2F-DE1A40EA1850}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XDCMHUB.Server", "..\XDCMHUB.Server\XDCMHUB.Server.csproj", "{B2D9516C-C4F4-41A6-896B-DE9BE024A7B9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5BD9EEDA-83AD-4A0E-AE2F-DE1A40EA1850}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BD9EEDA-83AD-4A0E-AE2F-DE1A40EA1850}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BD9EEDA-83AD-4A0E-AE2F-DE1A40EA1850}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BD9EEDA-83AD-4A0E-AE2F-DE1A40EA1850}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2D9516C-C4F4-41A6-896B-DE9BE024A7B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2D9516C-C4F4-41A6-896B-DE9BE024A7B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2D9516C-C4F4-41A6-896B-DE9BE024A7B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2D9516C-C4F4-41A6-896B-DE9BE024A7B9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CCCA9813-A562-45E3-BAD1-FFE1DC36F5E6}
+	EndGlobalSection
+EndGlobal
