@@ -1,0 +1,39 @@
+﻿@page "/"
+
+@layout BaseLayout
+
+<RadzenStack JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center" Style="width: 100vw; height: 100vh;">
+    <RadzenImage Path="/logoicon.svg" Style="width: 100px; height: auto;" />
+    <RadzenText Text="XDCMHUB" TextStyle="TextStyle.DisplayH3" class="mb-0" />
+    <RadzenText Text="chat anytime g" TextStyle="TextStyle.Caption" class="mb-5" />
+
+    <RadzenCard Style="width: 60vw">
+        <ChildContent>
+            <RadzenTemplateForm TItem="Credential" Data="_credential" Submit="@Submit">
+                <RadzenStack JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center">
+
+                    <RadzenStack Gap="0" class="w-100">
+                        <RadzenFormField Text="Username">
+                            <RadzenTextBox @bind-Value=@_credential.Username Disabled=appState.IsBusy Name="xd-rtb-un" class="w-100" />
+                        </RadzenFormField>
+                        <RadzenRequiredValidator Component="xd-rtb-un" Text="Required" />
+                    </RadzenStack>
+        
+                    <RadzenStack Gap="0" class="w-100">
+                        <RadzenFormField Text="Password">
+                            <RadzenPassword @bind-Value=@_credential.Password Disabled=appState.IsBusy Name="xd_rtp_pass" class="w-100" />
+                        </RadzenFormField>
+                        <RadzenRequiredValidator Component="xd_rtp_pass" Text="Required" />
+                    </RadzenStack>
+
+                    <RadzenButton ButtonType="ButtonType.Submit" Text="Login" IsBusy=@_isBusy class="w-100 mt-3" />
+
+                </RadzenStack>
+            </RadzenTemplateForm>
+        </ChildContent>
+    </RadzenCard>
+</RadzenStack>
+
+@code {
+
+}
