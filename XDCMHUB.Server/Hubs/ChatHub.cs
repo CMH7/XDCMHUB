@@ -47,16 +47,20 @@ public class ChatHub : Hub
 			var channel = await _context.Channels.FirstOrDefaultAsync(c => c.Name == channelName);
 			if (channel != null)
 			{
-				var newMessage = new Message
-				{
-					Content = message,
-					UserId = userId,
-					ChannelId = channel.Id,
-					SentAt = DateTime.Now
-				};
+				/**
+				 * CM: Simply commented this to disable saving of messages to database hehe
+				 */
 
-				_context.Messages.Add(newMessage);
-				await _context.SaveChangesAsync();
+				//var newMessage = new Message
+				//{
+				//	Content = message,
+				//	UserId = userId,
+				//	ChannelId = channel.Id,
+				//	SentAt = DateTime.Now
+				//};
+
+				//_context.Messages.Add(newMessage);
+				//await _context.SaveChangesAsync();
 
 				await Clients.Group(channelName).SendAsync("ReceiveMessage", username, message);
 			}
@@ -83,18 +87,22 @@ public class ChatHub : Hub
 		await Groups.AddToGroupAsync(Context.ConnectionId, channelName);
 		_userChannels[Context.ConnectionId] = channelName;
 
-		// Get recent messages
-		var recentMessages = await _context.Messages
-			.Include(m => m.User)
-			.Where(m => m.Channel.Name == channelName)
-			.OrderByDescending(m => m.SentAt)
-			.Take(10)
-			.ToListAsync();
+		/**
+		* CM: Since we wont be saving any messages then this part of code is not needed anymore.
+		*/
 
-		foreach (var message in recentMessages.OrderBy(m => m.SentAt))
-		{
-			await Clients.Caller.SendAsync("ReceiveMessage", message.User.Username, message.Content);
-		}
+		// Get recent messages
+		//var recentMessages = await _context.Messages
+		//	.Include(m => m.User)
+		//	.Where(m => m.Channel.Name == channelName)
+		//	.OrderByDescending(m => m.SentAt)
+		//	.Take(10)
+		//	.ToListAsync();
+
+		//foreach (var message in recentMessages.OrderBy(m => m.SentAt))
+		//{
+		//	await Clients.Caller.SendAsync("ReceiveMessage", message.User.Username, message.Content);
+		//}
 
 		await Clients.Group(channelName).SendAsync("ReceiveMessage", "System", $"{username} has joined the channel");
 	}
