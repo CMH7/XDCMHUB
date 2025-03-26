@@ -49,6 +49,7 @@ public class Startup(IConfiguration configuration)
 		app.UseEndpoints(endpoints =>
 		{
 			endpoints.MapHub<ChatHub>("/chathub");
+			endpoints.MapHub<AdminHub>("/buhmcdxhub");
 			endpoints.MapGet("/", async context =>
 			{
 				await context.Response.WriteAsync("Chat Server Running");

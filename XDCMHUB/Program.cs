@@ -52,7 +52,7 @@ class Program
 
 				if (input.StartsWith("/"))
 				{
-					var parts = input.Split(' ', 2);
+					var parts = input.Split(' ', 3);
 					var command = parts[0].ToLower();
 
 					switch (command)
@@ -80,7 +80,20 @@ class Program
 							ShowHelp();
 							break;
 
-						default:
+						case "/cls":
+							Console.Clear();
+							break;
+
+						case "/regu":
+							await chatService.RegisterUser(parts[1], parts[2]);
+							break;
+
+						case "/bcrypt":
+							string passwordHash = BCrypt.Net.BCrypt.HashPassword(parts[1]);
+							Console.WriteLine(passwordHash);
+							break;
+
+                        default:
 							Console.WriteLine($"Unknown command: {command}");
 							ShowHelp();
 							break;
@@ -139,6 +152,7 @@ class Program
 		Console.WriteLine("/join [channel] - Join a specific channel");
 		Console.WriteLine("/channels - List available channels");
 		Console.WriteLine("/help - Show this help message");
+		Console.WriteLine("/cls - Clears the console");
 		Console.WriteLine("/exit - Exit the application");
 	}
 }
