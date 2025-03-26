@@ -88,6 +88,10 @@ class Program
 							await chatService.RegisterUser(parts[1], parts[2]);
 							break;
 
+						case "/newchan":
+							await chatService.CreateChannel(parts[1], parts[2]);
+							break;
+
 						case "/bcrypt":
 							string passwordHash = BCrypt.Net.BCrypt.HashPassword(parts[1]);
 							Console.WriteLine(passwordHash);
