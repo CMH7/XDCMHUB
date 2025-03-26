@@ -72,6 +72,8 @@ public class AdminHub : Hub
 
             await _context.Channels.AddAsync(newChannel);
             await _context.SaveChangesAsync();
+
+            await Clients.Group("XDCMHUBAdmins").SendAsync("ReceiveMessage", Context.User.Identity.Name, $"New Channel: {channel} created successfully");
         }
     }
 }

@@ -84,7 +84,12 @@ public class ChatService : IAsyncDisposable
 	public async Task RegisterUser(string username, string password)
 	{
 		string passHash = BCrypt.Net.BCrypt.HashPassword(password);
-		await _hubConnection.InvokeAsync("RegisterUser", username, password);
+		await _hubConnection.InvokeAsync("RegisterUser", username, passHash);
+	}
+
+	public async Task CreateChannel(string channel, string desc)
+	{
+		await _hubConnection.InvokeAsync("CreateChannel", channel, desc);
 	}
     #endregion Admin Side
 
