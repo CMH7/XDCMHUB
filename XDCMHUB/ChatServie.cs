@@ -80,7 +80,15 @@ public class ChatService : IAsyncDisposable
 		return _currentChannel;
 	}
 
-	public async ValueTask DisposeAsync()
+    #region Admin Side
+	public async Task RegisterUser(string username, string password)
+	{
+		string passHash = BCrypt.Net.BCrypt.HashPassword(password);
+		await _hubConnection.InvokeAsync("RegisterUser", username, password);
+	}
+    #endregion Admin Side
+
+    public async ValueTask DisposeAsync()
 	{
 		await _hubConnection.DisposeAsync();
 	}
