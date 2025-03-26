@@ -1,4 +1,7 @@
-﻿namespace XDCMHUB;
+﻿using System;
+using System.Text.RegularExpressions;
+
+namespace XDCMHUB;
 
 class Program
 {
@@ -6,7 +9,7 @@ class Program
 	{
 		Console.WriteLine("===== Chat Client =====");
 
-		string serverUrl = GetInput("Enter server URL (default: http://localhost:5000/chathub):", "http://localhost:5000/chathub");
+		string serverUrl = GetInput("Enter server URL:", "http://192.168.2.32:9123/chathub");
 		string username = GetInput("Enter username:", null);
 		string password = GetPassword("Enter password:");
 
@@ -14,13 +17,7 @@ class Program
 		{
 			await using var chatService = new ChatService(serverUrl, username, password);
 
-			chatService.MessageReceived += (user, message) =>
-			{
-				Console.ForegroundColor = user == "System" ? ConsoleColor.Yellow :
-										 user == username ? ConsoleColor.Green : ConsoleColor.Cyan;
-				Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] [{chatService.GetCurrentChannel()}] {user}: {message}");
-				Console.ResetColor();
-			};
+			chatService.MessageReceived += (user, message) => ConsoleColorManager.MessageReceivedHandler(username, user, message);
 
 			chatService.ErrorReceived += (error) =>
 			{
