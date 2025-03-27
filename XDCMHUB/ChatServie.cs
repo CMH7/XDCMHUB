@@ -31,7 +31,8 @@ public class ChatService : IAsyncDisposable
 
 		_hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
 		{
-			MessageReceived?.Invoke(user, message);
+			message = Crypto.DecryptString(message, "buhmcdx");
+            MessageReceived?.Invoke(user, message);
 		});
 
 		_hubConnection.On<string>("Error", message =>
@@ -61,7 +62,9 @@ public class ChatService : IAsyncDisposable
 
 	public async Task SendMessageAsync(string message)
 	{
-		await _hubConnection.InvokeAsync("SendMessage", message);
+		message = Crypto.EncryptString(message, "buhmcdx");
+
+        await _hubConnection.InvokeAsync("SendMessage", message);
 	}
 
 	public async Task JoinChannelAsync(string channelName)
