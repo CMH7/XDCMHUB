@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
+using Spectre.Console;
 using System.Text;
 
 namespace XDCMHUB;
@@ -20,7 +21,7 @@ public class ChatService : IAsyncDisposable
 		_password = password;
 
 		_hubConnection = new HubConnectionBuilder()
-			.WithUrl(serverUrl, options =>
+			.WithUrl($"{serverUrl}", options =>
 			{
 				options.Headers.Add("Authorization",
 					"Basic " + Convert.ToBase64String(
@@ -31,7 +32,7 @@ public class ChatService : IAsyncDisposable
 
 		_hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
 		{
-			message = Crypto.DecryptString(message, "buhmcdx");
+			//message = Crypto.DecryptString(message, "buhmcdx");
             MessageReceived?.Invoke(user, message);
 		});
 
@@ -51,25 +52,24 @@ public class ChatService : IAsyncDisposable
 		try
 		{
 			await _hubConnection.StartAsync();
-			Console.WriteLine("Connected to chat server!");
+			Program.Messages.Add("[bold cyan1]Connected to chat server![/]");
 		}
 		catch (Exception ex)
 		{
-			Console.WriteLine($"Error connecting to server: {ex.Message}");
-			throw;
+            Program.Messages.Add($"Error connecting to server: {ex.Message}");
 		}
 	}
 
 	public async Task SendMessageAsync(string message)
 	{
-		message = Crypto.EncryptString(message, "buhmcdx");
+		//message = Crypto.EncryptString(message, "buhmcdx");
 
         await _hubConnection.InvokeAsync("SendMessage", message);
 	}
 
 	public async Task JoinChannelAsync(string channelName)
 	{
-		ConsoleColorManager.CurrentChannel = channelName;
+		ChatDisplayServices.CurrentChannel = channelName;
 		await _hubConnection.InvokeAsync("JoinChannel", channelName);
 		_currentChannel = channelName;
 	}
