@@ -69,6 +69,7 @@ public class ChatService : IAsyncDisposable
 
 	public async Task JoinChannelAsync(string channelName)
 	{
+		ConsoleColorManager.CurrentChannel = channelName;
 		await _hubConnection.InvokeAsync("JoinChannel", channelName);
 		_currentChannel = channelName;
 	}
