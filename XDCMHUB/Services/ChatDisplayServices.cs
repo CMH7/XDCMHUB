@@ -1,36 +1,37 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace XDCMHUB;
+namespace XDCMHUB.Services;
 
 public class ChatDisplayServices
 {
     public static string CurrentChannel { get; set; } = "General";
 
-    // Potential event handler structure
-    public static void MessageReceivedHandler(string currentUsername, string user, string message, bool? rerender = false)
+	#region Chat Notification Settings
+	public static bool MuteChatNotification { get; set; }
+	public static bool MuteMentionNotification { get; set; }
+	public static bool MuteAllNotification { get; set; }
+	#endregion Chat Notification Settings
+
+	// Potential event handler structure
+	public static void MessageReceivedHandler(string user, string message, bool? rerender = false)
     {
-        if (message.Contains("@all") || message.Contains($"@{currentUsername}"))
-        {
-            //ShowNotification(user, message, CurrentChannel);
-        }
+        DisplayMessage(user, Program.Username, message, CurrentChannel);
 
-        DisplayMessage(user, currentUsername, message, CurrentChannel);
-
-        if((bool)rerender) Program.ReRenderMainLayout();
+        if ((bool)rerender) Program.ReRenderMainLayout();
 
         // Notification logic
-        if (message.Contains("@all"))
+        if (message.Contains("@all") && !MuteMentionNotification && !MuteAllNotification)
             PlayAllMentionNotification();
-        else if (message.Contains($"@{currentUsername}"))
+        else if (message.Contains($"@{Program.Username}") && !MuteMentionNotification && !MuteAllNotification)
             PlayMentionedNotification();
-        else
+        else /*if (!MuteChatNotification && !MuteAllNotification)*/
             PlaySoftChatNotification();
     }
 
     // Updated message display with robust color handling
     static void DisplayMessage(string user, string username, string message, string channel)
     {
-        Program.Messages.Add($"{(user == username ? "[aqua]You[/]" : user == "System" ? $"[underline yellow]{user}[/]" : $"[purple_2]{user}[/]")}: {DisplayMessageWithMentions(message, username)}");
+        Program.Messages.Add($"{(user == username ? "[aqua]You[/]" : user == "System" ? $"[underline yellow]{user}[/]" : $"[purple_2]{user}[/]")}:{DisplayMessageWithMentions(message, username)}");
     }
 
     static string DisplayMessageWithMentions(string message, string username)
@@ -44,8 +45,7 @@ public class ChatDisplayServices
 
         foreach (Match mention in mentions)
         {
-            finalMessage = $"[silver]{message.Substring(lastIndex, mention.Index - lastIndex)}[/]";
-            finalMessage += $"{finalMessage}[{(mention.Value.Trim('@') == username ? "green" : "blue")}]{mention.Value}[/]";
+            finalMessage = $" [silver]{message.Substring(lastIndex, mention.Index - lastIndex)}[/][{(mention.Value.Trim('@') == username ? "green" : "blue")}]{mention.Value}[/]";
 
             // Update last processed index
             lastIndex = mention.Index + mention.Length;
@@ -54,7 +54,7 @@ public class ChatDisplayServices
         // Print remaining text after last mention
         if (lastIndex < message.Length)
         {
-            finalMessage += $"{finalMessage} [silver]{message.Substring(lastIndex)}[/]";
+            finalMessage = $"{finalMessage} [silver]{message.Substring(lastIndex)}[/]";
         }
 
         return finalMessage;
