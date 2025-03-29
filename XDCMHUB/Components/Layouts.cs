@@ -14,10 +14,10 @@ public class Layouts
         return new Layout("Main")
             .SplitColumns(
                 new Layout("Left")
-                    .Size(40)
+                    .Size(30)
                     .SplitRows(
-                        new Layout("Top"),
-                        new Layout("Bottom")
+                        new Layout("OtherUserArea"),
+                        new Layout("Others").Invisible()
                     ),
                 new Layout("ChatArea")
             );
