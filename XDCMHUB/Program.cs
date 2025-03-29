@@ -1,45 +1,73 @@
 ﻿using Spectre.Console;
+using Spectre.Console.Rendering;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using XDCMHUB.Components;
+using XDCMHUB.Services;
+using static System.Collections.Specialized.BitVector32;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace XDCMHUB;
 
 class Program
 {
-    public static Layout MainLayout { get; set; } = new();
+	#region Credentials
+	public static string Username { get; set; }
+	public static string Password { get; set; }
+	#endregion Credentials
+
+	public static Layout MainLayout { get; set; } = new();
     public static List<string> Messages { get; set; } = [];
     public static int ChatHistoryCount { get; set; } = 50;
+
+	#region Active Users Area Data
+	public static List<string> ActiveUsers { get; set; } = [];
+	#endregion Active Users Area Data
+
+	public static readonly Dictionary<string, string> BuiltInCommands = new() { 
+		{ "/help", "Show this help message"},
+		{ "/join [channel]", "Join a specific channel"},
+		{ "/channels", "List available channels"},
+		{ "/ccount [int]", "Chat history count"},
+		{ "/mute", "Mute the chat"},
+		{ "/bcrypt [string]", "Encrypt a message [EXP] Note: this is just on you"},
+		{ "/cls", "Clears the console"},
+		{ "/exit", "Exit the application"}
+	};
 
     static async Task Main(string[] args)
     {
         string serverUrl = AnsiConsole.Prompt(new TextPrompt<string>("Server:").DefaultValue("http://192.168.2.32:9123/chathub"));
-        string username = AnsiConsole.Prompt(new TextPrompt<string>("Username:"));
-        string password = AnsiConsole.Prompt(new TextPrompt<string>("Password:").Secret());
-
+        Username = AnsiConsole.Prompt(new TextPrompt<string>("Username:"));
+        Password = AnsiConsole.Prompt(new TextPrompt<string>("Password:").Secret());
         
         try
         {
-            await using var chatService = new ChatService(serverUrl, username, password);
+            await using var chatService = new ChatService(serverUrl, Username, Password);
 
             ChatDisplayServices.CurrentChannel = "General";
-            chatService.MessageReceived += (user, message) => ChatDisplayServices.MessageReceivedHandler(username, user, message, true);
 
+            chatService.MessageReceived += (user, message) => ChatDisplayServices.MessageReceivedHandler(user, message, true);
             chatService.ErrorReceived += (error) => Messages.Add($"[darkred bold]ERROR:[/] [red]{error}[/]");
+            chatService.GetActiveUsersReceived += (activeUsers) => ActiveUsers = [..activeUsers];
 
             chatService.ChannelListReceived += (channels) =>
             {
-                Messages.Add("Available channels:");
-                foreach (var channel in channels)
-                {
-                    Messages.Add($"- {channel}");
-                }
+                RenderChannelList([.. channels]);
             };
 
             await chatService.StartAsync();
             MainLayout = Layouts.MainLayout();
             bool running = true;
+            bool firstRender = true;
             while (running)
             {
+                if (firstRender)
+                {
+                    ReRenderMainLayout();
+                    firstRender = false;
+                }
+
                 // Make sure to remove or release old chats...
                 if(Messages.Count > ChatHistoryCount)
                 {
@@ -48,10 +76,8 @@ class Program
                     Messages.Reverse();
                 }
 
-                ReRenderMainLayout();
-
                 // Get user input
-                string? input = AnsiConsole.Ask<string>("[grey]>[/]");
+                string? input = AnsiConsole.Ask<string>("");
 
                 if (string.IsNullOrEmpty(input))
                     continue;
@@ -103,8 +129,19 @@ class Program
                             break;
 
                         case "/help":
-                            ShowHelp();
+                            Messages.Add("/help");
                             break;
+
+                        case "/figlet":
+							if (parts.Length > 1 && !string.IsNullOrEmpty(parts[1]))
+                            {
+								await chatService.SendMessageAsync(input);
+							}
+                            else
+                            {
+								Messages.Add("[green bold]Usage:[/] [aqua]/figlet[/] [[text]]");
+							}
+							break;
 
                         case "/cls":
                             Messages.Clear();
@@ -119,15 +156,31 @@ class Program
                             break;
 
                         case "/bcrypt":
-                            string passwordHash = BCrypt.Net.BCrypt.HashPassword(parts[1]);
+                            string passwordHash = BCrypt.Net.BCrypt.HashPassword(parts[1])
+                                .Replace("[", "[[")
+                                .Replace("]", "]]");
                             Messages.Add($"[pink]{passwordHash}[/]");
                             break;
 
+                        case "/mute":
+                            List<string> modes = ["Basic chats", "Mentions", "Totally ayoko makarinig ng notification :>"];
+							var mode = AnsiConsole.Prompt(
+	                            new SelectionPrompt<string>()
+		                            .Title("Anong mode pre?")
+									.AddChoices(modes));
+
+                            if (mode == modes[0]) ChatDisplayServices.MuteChatNotification = true;
+                            else if (mode == modes[1]) ChatDisplayServices.MuteMentionNotification = true;
+                            else if (mode == modes[2]) ChatDisplayServices.MuteAllNotification = true;
+							break;
+
                         default:
                             Messages.Add($"Unknown command: {command}");
-                            ShowHelp();
+                            Messages.Add("/help");
                             break;
                         }
+
+                    if (parts[0] != "/figlet") ReRenderMainLayout();
                 }
                 else
                 {
@@ -141,44 +194,95 @@ class Program
         }
     }
 
-    static void ShowHelp()
+    static Table RenderHelpTable()
     {
-        Messages.Add("Available commands:");
-        Messages.Add("[aqua]/join[/] [[channel]] - Join a specific channel");
-        Messages.Add("[aqua]/channels[/] - List available channels");
-        Messages.Add("[aqua]/help[/] - Show this help message");
-        Messages.Add("[aqua]/ccount[/] - Chat history count");
-        Messages.Add("[aqua]/cls[/] - Clears the console");
-        Messages.Add("[aqua]/exit[/] - Exit the application");
+        Table table = new();
+
+        table.AddColumn("Command");
+        table.AddColumn("Description");
+
+        BuiltInCommands.ToList().ForEach(cmd =>
+            table.AddRow(
+                $"[aqua]{cmd.Key.Replace("[", "[[").Replace("]", "]]")}[/]",
+                cmd.Value.Replace("[", "[[").Replace("]", "]]")));
+
+        return table;
     }
 
-    // Method to render chat messages
-    static Rows RenderChatMessages(List<string> messages)
+    static void RenderChannelList(List<string> channels)
     {
-        List<Markup> markups = messages.ConvertAll(x => new Markup(x));
+        Table table = new();
+        table.AddColumn("Channel name");
+
+        List<string> modChannels = [..channels.Select(x => x.Replace("[", "[[").Replace("]", "]]"))];
+
+        modChannels.ForEach(chan => table.AddRow(chan));
+        table.Expand();
+
+        // Render chat messages in the chat area
+        MainLayout["Others"]
+            .Update(
+                new Panel(table.Expand())
+                    .Header($"[bold]Channel List[/]")
+                    .Expand()
+            )
+            .Visible();
+	}
+
+    // Method to render chat messages
+    static void RenderChatMessages()
+    {
+        List<IRenderable> toRenderComponents = [];
+        Messages.ForEach(mess =>
+        {
+            var parts = mess.Split(" ", 2);
+
+            if (parts[0] == "/help")
+            {
+				Grid grid = new();
+				grid.AddColumn().AddColumn();
+				grid.AddRow(new Markup("[yellow underline]System:[/]"), RenderHelpTable());
+			    toRenderComponents.Add(grid);
+			}
+			else if (parts[1].Split(" ", 2)[0] == "[silver]/figlet")
+            {
+				var message = parts[1].Split(" ", 2)[1]
+                .Replace("[blue]","")
+                .Replace("[green]","")
+                .Replace("[/]", "");
+				Grid grid = new();
+				grid.AddColumn().AddColumn();
+				grid.AddRow(new Markup(parts[0]), new FigletText(message).Color(Color.RosyBrown));
+			    toRenderComponents.Add(grid);
+			}
+			else
+            {
+				toRenderComponents.Add(new Markup(mess));
+            }
+		});
+
+		// Render chat messages in the chat area
+		MainLayout["ChatArea"].Update(
+			new Panel(new Rows(toRenderComponents))
+				.Header($"[bold]Chat Messages[/] [bold teal]{ChatDisplayServices.CurrentChannel}[/]")
+				.Expand());
+	}
+    
+    static Rows RenderActiveUsers(List<string> activeUsers)
+    {
+        List<Markup> markups = activeUsers.ConvertAll(x => new Markup(x));
         return new Rows(markups);
     }
 
     public static void ReRenderMainLayout()
     {
         AnsiConsole.Clear();
+        RenderChatMessages();
 
-        // Render chat messages in the chat area
-        MainLayout["ChatArea"].Update(
-            new Panel(RenderChatMessages(Messages))
-                .Header($"[bold]Chat Messages[/] [bold teal]{ChatDisplayServices.CurrentChannel}[/]")
-                .Expand());
-
-        // Render input prompt in the top left section
-        MainLayout["Bottom"].Update(
-            new Panel("")
+		// Render input prompt in the top left section
+		MainLayout["OtherUserArea"].Update(
+            new Panel(RenderActiveUsers(ActiveUsers))
                 .Header("[bold]Active Users[/]")
-                .Expand());
-        
-        // Render input prompt in the bottom left section
-        MainLayout["Bottom"].Update(
-            new Panel("")
-                .Header("[bold]Channels[/]")
                 .Expand());
 
         // Render the updated layout
