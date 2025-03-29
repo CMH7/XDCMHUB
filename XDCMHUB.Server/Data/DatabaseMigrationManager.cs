@@ -50,5 +50,15 @@ public class DatabaseMigrationManager
             });
             _context.SaveChanges();
         }
+        
+        if(!_context.Channels.Any(c => c.Name == "General"))
+        {
+            _context.Channels.Add(new()
+            {
+                Name = "General",
+                Description = "General"
+            });
+            _context.SaveChanges();
+        }
     }
 }
