@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
 using Spectre.Console;
 using System.Text;
+using XDCMHUB.Services;
 
 namespace XDCMHUB;
 
@@ -14,6 +15,7 @@ public class ChatService : IAsyncDisposable
 	public event Action<string, string> MessageReceived;
 	public event Action<string> ErrorReceived;
 	public event Action<string[]> ChannelListReceived;
+	public event Action<string[]> GetActiveUsersReceived;
 
 	public ChatService(string serverUrl, string username, string password)
 	{
@@ -32,8 +34,8 @@ public class ChatService : IAsyncDisposable
 
 		_hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
 		{
-			//message = Crypto.DecryptString(message, "buhmcdx");
-            MessageReceived?.Invoke(user, message);
+			if(user != "System") message = Crypto.DecryptString(message, "buhmcdx");
+			MessageReceived?.Invoke(user, message);
 		});
 
 		_hubConnection.On<string>("Error", message =>
@@ -44,6 +46,11 @@ public class ChatService : IAsyncDisposable
 		_hubConnection.On<string[]>("ChannelList", channels =>
 		{
 			ChannelListReceived?.Invoke(channels);
+		});
+		
+		_hubConnection.On<string[]>("GetActiveUsers", activeUsers =>
+		{
+			GetActiveUsersReceived?.Invoke(activeUsers);
 		});
 	}
 
@@ -62,9 +69,9 @@ public class ChatService : IAsyncDisposable
 
 	public async Task SendMessageAsync(string message)
 	{
-		//message = Crypto.EncryptString(message, "buhmcdx");
+		message = Crypto.EncryptString(message, "buhmcdx");
 
-        await _hubConnection.InvokeAsync("SendMessage", message);
+		await _hubConnection.InvokeAsync("SendMessage", message);
 	}
 
 	public async Task JoinChannelAsync(string channelName)
